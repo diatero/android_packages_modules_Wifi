@@ -774,9 +774,26 @@ public class WifiPermissionsUtil {
         return mLocationManager != null;
     }
 
-    /**
-     * Retrieves a handle to LocationManager (if not already done) and check if location is enabled.
-     */
+    /** Returns whether this app's ROM development policy hides location-sensitive environment. */
+    public boolean shouldHideLocationEnvironment(int uid) {
+        if (!com.android.modules.utils.build.SdkLevel.isAtLeastB()
+                || !retrieveLocationManagerIfNecessary()) {
+            return false;
+        }
+        long token = Binder.clearCallingIdentity();
+        try {
+            return mLocationManager.shouldHideLocationEnvironment(uid);
+        } catch (RuntimeException | LinkageError e) {
+            // DIATER-HOOK(virtual-location/wifi.environment.filter): a failed query is not a
+            // known target, so stock behavior applies
+            Log.e(TAG, "virtual location environment query failed: " + e);
+            return false;
+        } finally {
+            Binder.restoreCallingIdentity(token);
+        }
+    }
+
+    /** Retrieves LocationManager if necessary and checks whether location is enabled. */
     public boolean isLocationModeEnabled() {
         if (!retrieveLocationManagerIfNecessary()) return false;
         try {

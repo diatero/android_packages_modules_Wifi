@@ -5274,6 +5274,11 @@ public class WifiServiceImpl extends IWifiManager.Stub {
                     Log.v(TAG, "Keeping REDACT_FOR_ACCESS_FINE_LOCATION:" + ignored);
                 }
             }
+            // DIATER-HOOK(virtual-location/wifi.environment.filter): redact for policy targets
+            if (mWifiPermissionsUtil.shouldHideLocationEnvironment(uid)) {
+                redactions |= NetworkCapabilities.REDACT_FOR_ACCESS_FINE_LOCATION
+                        | NetworkCapabilities.REDACT_FOR_LOCAL_MAC_ADDRESS;
+            }
             return wifiInfo.makeCopy(redactions);
         } finally {
             Binder.restoreCallingIdentity(ident);
@@ -5314,6 +5319,10 @@ public class WifiServiceImpl extends IWifiManager.Stub {
         try {
             mWifiPermissionsUtil.enforceCanAccessScanResults(callingPackage, callingFeatureId,
                     uid, null);
+            // DIATER-HOOK(virtual-location/wifi.environment.filter): redact for policy targets
+            if (mWifiPermissionsUtil.shouldHideLocationEnvironment(uid)) {
+                return new ParceledListSlice<>(Collections.emptyList());
+            }
             List<ScanResult> scanResults = mWifiThreadRunner.call(
                     mScanRequestProxy::getScanResults, Collections.emptyList(),
                     TAG + "#getScanResults");
@@ -5399,6 +5408,10 @@ public class WifiServiceImpl extends IWifiManager.Stub {
             mWifiPermissionsUtil.enforceCanAccessScanResults(callingPackage, callingFeatureId,
                     uid, null);
 
+            // DIATER-HOOK(virtual-location/wifi.environment.filter): redact for policy targets
+            if (mWifiPermissionsUtil.shouldHideLocationEnvironment(uid)) {
+                return Collections.emptyMap();
+            }
             return mWifiThreadRunner.call(
                     () -> {
                         if (scanResults == null
